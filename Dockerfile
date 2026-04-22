@@ -8,7 +8,6 @@ RUN git clone https://github.com/flutter/flutter.git /flutter
 ENV PATH="/flutter/bin:/flutter/bin/cache/dart-sdk/bin:${PATH}"
 
 RUN flutter channel stable
-RUN flutter upgrade
 RUN flutter config --enable-web
 
 WORKDIR /app
