@@ -1,23 +1,58 @@
+import 'dart:convert';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 class FirebaseEnv {
-  static const apiKey = String.fromEnvironment('FIREBASE_API_KEY');
-  static const appId = String.fromEnvironment('FIREBASE_APP_ID');
-  static const messagingSenderId = String.fromEnvironment(
+  static const _apiKey = String.fromEnvironment('FIREBASE_API_KEY');
+  static const _appId = String.fromEnvironment('FIREBASE_APP_ID');
+  static const _messagingSenderId = String.fromEnvironment(
     'FIREBASE_MESSAGING_SENDER_ID',
   );
-  static const projectId = String.fromEnvironment('FIREBASE_PROJECT_ID');
-  static const authDomain = String.fromEnvironment('FIREBASE_AUTH_DOMAIN');
-  static const storageBucket = String.fromEnvironment(
+  static const _projectId = String.fromEnvironment('FIREBASE_PROJECT_ID');
+  static const _authDomain = String.fromEnvironment('FIREBASE_AUTH_DOMAIN');
+  static const _storageBucket = String.fromEnvironment(
     'FIREBASE_STORAGE_BUCKET',
   );
+
+  static Map<String, String> _runtimeValues = const {};
+
+  static String get apiKey => _value('FIREBASE_API_KEY', _apiKey);
+  static String get appId => _value('FIREBASE_APP_ID', _appId);
+  static String get messagingSenderId =>
+      _value('FIREBASE_MESSAGING_SENDER_ID', _messagingSenderId);
+  static String get projectId => _value('FIREBASE_PROJECT_ID', _projectId);
+  static String get authDomain => _value('FIREBASE_AUTH_DOMAIN', _authDomain);
+  static String get storageBucket =>
+      _value('FIREBASE_STORAGE_BUCKET', _storageBucket);
+
+  static Future<void> load() async {
+    try {
+      final content = await rootBundle.loadString(
+        'config/firebase_config.json',
+      );
+      final decoded = jsonDecode(content);
+      if (decoded is Map<String, dynamic>) {
+        _runtimeValues = decoded.map(
+          (key, value) => MapEntry(key, value?.toString().trim() ?? ''),
+        );
+      }
+    } catch (_) {
+      _runtimeValues = const {};
+    }
+  }
 
   static bool get isConfigured {
     return apiKey.isNotEmpty &&
         appId.isNotEmpty &&
         messagingSenderId.isNotEmpty &&
         projectId.isNotEmpty;
+  }
+
+  static String _value(String key, String compileTimeValue) {
+    if (compileTimeValue.isNotEmpty) return compileTimeValue;
+    return _runtimeValues[key] ?? '';
   }
 }
 

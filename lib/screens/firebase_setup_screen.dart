@@ -53,9 +53,9 @@ class FirebaseSetupScreen extends StatelessWidget {
                             'Tạo Cloud Firestore và publish rules trong firestore.rules.',
                       ),
                       const _SetupLine(
-                        label: 'Build',
+                        label: 'Render',
                         text:
-                            'Truyền FIREBASE_API_KEY, FIREBASE_APP_ID, FIREBASE_PROJECT_ID và FIREBASE_MESSAGING_SENDER_ID khi build.',
+                            'Thêm FIREBASE_API_KEY, FIREBASE_APP_ID, FIREBASE_PROJECT_ID và FIREBASE_MESSAGING_SENDER_ID trong Environment của Render.',
                       ),
                     ],
                   ),

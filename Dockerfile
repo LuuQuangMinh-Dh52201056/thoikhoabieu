@@ -36,10 +36,8 @@ FROM nginx:alpine
 ENV PORT=10000
 
 COPY --from=build /app/build/web /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/templates/default.conf.template
-COPY docker-entrypoint.d/10-runtime-config.sh /docker-entrypoint.d/10-runtime-config.sh
-RUN chmod +x /docker-entrypoint.d/10-runtime-config.sh
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 10000
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["/bin/sh", "-c", "mkdir -p /usr/share/nginx/html/assets/config && printf '{\\n  \"FIREBASE_API_KEY\": \"%s\",\\n  \"FIREBASE_APP_ID\": \"%s\",\\n  \"FIREBASE_MESSAGING_SENDER_ID\": \"%s\",\\n  \"FIREBASE_PROJECT_ID\": \"%s\",\\n  \"FIREBASE_AUTH_DOMAIN\": \"%s\",\\n  \"FIREBASE_STORAGE_BUCKET\": \"%s\"\\n}\\n' \"${FIREBASE_API_KEY:-}\" \"${FIREBASE_APP_ID:-}\" \"${FIREBASE_MESSAGING_SENDER_ID:-}\" \"${FIREBASE_PROJECT_ID:-}\" \"${FIREBASE_AUTH_DOMAIN:-}\" \"${FIREBASE_STORAGE_BUCKET:-}\" > /usr/share/nginx/html/assets/config/firebase_config.json && exec nginx -g 'daemon off;'"]

@@ -7,6 +7,7 @@ import 'screens/firebase_setup_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await FirebaseEnv.load();
   final firebaseConfigured = FirebaseEnv.isConfigured;
   if (firebaseConfigured) {
     await Firebase.initializeApp(
