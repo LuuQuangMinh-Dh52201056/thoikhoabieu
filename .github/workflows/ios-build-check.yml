@@ -1,0 +1,47 @@
+name: iOS build check
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    name: Build iOS without signing
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Analyze touched code
+        run: flutter analyze lib/screens/export_summary_screen.dart test/widget_test.dart lib/widgets/day_tab_bar.dart
+
+      - name: Test
+        run: flutter test
+
+      - name: Build iOS app without code signing
+        run: flutter build ios --release --no-codesign
+
+      - name: Package unsigned app artifact
+        run: |
+          cd build/ios/iphoneos
+          zip -r Runner-unsigned.app.zip Runner.app
+
+      - name: Upload unsigned app artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Runner-unsigned-ios-app
+          path: build/ios/iphoneos/Runner-unsigned.app.zip

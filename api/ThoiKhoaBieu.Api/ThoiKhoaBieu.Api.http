@@ -1,0 +1,6 @@
+@ThoiKhoaBieu.Api_HostAddress = http://localhost:5071
+
+GET {{ThoiKhoaBieu.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
