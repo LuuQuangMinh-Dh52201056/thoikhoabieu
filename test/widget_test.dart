@@ -19,8 +19,16 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('Tài khoản admin local'), findsOneWidget);
-    expect(find.text('admin@local.com / admin123456'), findsOneWidget);
+    expect(find.text('Đăng nhập tài khoản nội bộ'), findsOneWidget);
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Email'),
+      'admin@local.com',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Mật khẩu'),
+      'admin123456',
+    );
 
     await tester.tap(find.widgetWithText(ElevatedButton, 'Đăng nhập'));
     await tester.pump(const Duration(milliseconds: 100));

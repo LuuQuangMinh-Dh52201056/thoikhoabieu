@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../firebase_options.dart';
 import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -18,15 +17,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isLoading = false;
   bool _obscurePassword = true;
-
-  @override
-  void initState() {
-    super.initState();
-    if (!FirebaseEnv.isConfigured) {
-      _emailController.text = AuthService.localAdminEmail;
-      _passwordController.text = AuthService.localAdminPassword;
-    }
-  }
 
   @override
   void dispose() {
@@ -97,19 +87,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(22),
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF1E3A8A), Color(0xFF2563EB)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      color: const Color(0xFF111827),
                       borderRadius: BorderRadius.circular(28),
                       boxShadow: [
                         BoxShadow(
                           color: const Color(
-                            0xFF1E3A8A,
-                          ).withValues(alpha: 0.18),
+                            0xFF111827,
+                          ).withValues(alpha: 0.16),
                           blurRadius: 24,
                           offset: const Offset(0, 12),
                         ),
@@ -138,7 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         SizedBox(height: 6),
                         Text(
-                          'Đăng nhập bằng tài khoản do admin cấp',
+                          'Đăng nhập tài khoản nội bộ',
                           style: TextStyle(
                             color: Colors.white70,
                             fontWeight: FontWeight.w600,
@@ -148,50 +134,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 18),
-                  if (!FirebaseEnv.isConfigured) ...[
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(
-                              Icons.admin_panel_settings_outlined,
-                              color: Color(0xFF2563EB),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Tài khoản admin local',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    '${AuthService.localAdminEmail} / ${AuthService.localAdminPassword}',
-                                    style: TextStyle(
-                                      color: Colors.grey.shade700,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  const Text(
-                                    'Dữ liệu lưu trong trình duyệt. Muốn dùng dữ liệu chung nhiều máy thì thêm Firebase env trên Render.',
-                                    style: TextStyle(height: 1.35),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(18),

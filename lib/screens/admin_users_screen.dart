@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../firebase_options.dart';
 import '../models/app_user.dart';
 import '../services/auth_service.dart';
 
-enum _UserAction { edit, resetPassword, lock, unlock, archive, restore }
+enum _UserAction { edit, lock, unlock, archive, restore }
 
 class AdminUsersScreen extends StatefulWidget {
   const AdminUsersScreen({super.key});
@@ -116,8 +115,6 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     switch (action) {
       case _UserAction.edit:
         await _openEditUser(user);
-      case _UserAction.resetPassword:
-        await _sendResetPassword(user);
       case _UserAction.lock:
         await _toggleActive(user, false);
       case _UserAction.unlock:
@@ -141,34 +138,6 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
       await _authService.updateUserActive(uid: user.uid, active: active);
       await _loadUsers();
       _showSnack(active ? 'Đã mở khóa tài khoản.' : 'Đã khóa tài khoản.');
-    } catch (e) {
-      _showSnack(e);
-    } finally {
-      if (mounted) setState(() => _busyUid = null);
-    }
-  }
-
-  Future<void> _sendResetPassword(AppUser user) async {
-    final confirm = await _confirm(
-      title: FirebaseEnv.isConfigured
-          ? 'Gửi đặt lại mật khẩu?'
-          : 'Đặt lại mật khẩu local?',
-      message: FirebaseEnv.isConfigured
-          ? 'Firebase sẽ gửi email đặt lại mật khẩu đến ${user.email}. Người dùng tự đặt mật khẩu mới qua email này.'
-          : 'Mật khẩu local của ${user.email} sẽ được đặt về 123456.',
-      actionText: FirebaseEnv.isConfigured ? 'Gửi email' : 'Đặt về 123456',
-      icon: Icons.mark_email_read_outlined,
-    );
-    if (confirm != true) return;
-
-    setState(() => _busyUid = user.uid);
-    try {
-      await _authService.sendPasswordReset(user.email);
-      _showSnack(
-        FirebaseEnv.isConfigured
-            ? 'Đã gửi email đặt lại mật khẩu.'
-            : 'Đã đặt mật khẩu local về 123456.',
-      );
     } catch (e) {
       _showSnack(e);
     } finally {
@@ -270,49 +239,47 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   }
 
   Widget _buildHeader() {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0F172A), Color(0xFF1D4ED8), Color(0xFF0F766E)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.16),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       child: Column(
         children: [
           Row(
             children: [
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF111827),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: Colors.white,
+                  ),
+                ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 12),
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Quản trị nhân sự',
+                      'Admin users',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
+                        color: Color(0xFF0F172A),
+                        fontSize: 25,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                    SizedBox(height: 3),
+                    SizedBox(height: 2),
                     Text(
-                      'Tạo tài khoản, phân quyền và kiểm soát truy cập',
-                      style: TextStyle(color: Colors.white70),
+                      'Thêm, sửa, khóa và xóa tài khoản',
+                      style: TextStyle(
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ],
                 ),
@@ -320,19 +287,16 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
               IconButton(
                 onPressed: _loadUsers,
                 tooltip: 'Tải lại',
-                icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                icon: const Icon(Icons.refresh_rounded),
               ),
-              IconButton(
+              FilledButton.icon(
                 onPressed: _openCreateUser,
-                tooltip: 'Tạo tài khoản',
-                icon: const Icon(
-                  Icons.person_add_alt_1_rounded,
-                  color: Colors.white,
-                ),
+                icon: const Icon(Icons.person_add_alt_1_rounded, size: 19),
+                label: const Text('Thêm'),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           Row(
             children: [
               Expanded(
@@ -540,16 +504,31 @@ class _MetricTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 76,
+      height: 72,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.14),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          Icon(icon, color: Colors.white, size: 22),
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: const Color(0xFF2563EB), size: 19),
+          ),
           const SizedBox(width: 9),
           Expanded(
             child: Column(
@@ -561,7 +540,7 @@ class _MetricTile extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Color(0xFF0F172A),
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
                   ),
@@ -571,7 +550,7 @@ class _MetricTile extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Colors.white70,
+                    color: Color(0xFF64748B),
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),
@@ -719,13 +698,6 @@ class _UserAccountCard extends StatelessWidget {
                       child: _MenuItem(
                         icon: Icons.edit_outlined,
                         text: 'Sửa thông tin',
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: _UserAction.resetPassword,
-                      child: _MenuItem(
-                        icon: Icons.mark_email_read_outlined,
-                        text: 'Gửi đổi mật khẩu',
                       ),
                     ),
                     PopupMenuItem(
@@ -1060,14 +1032,6 @@ class _UserFormSheetState extends State<_UserFormSheet> {
                       : 'Tạo tài khoản',
                 ),
               ),
-              if (_isEdit) ...[
-                const SizedBox(height: 10),
-                Text(
-                  'Muốn đổi mật khẩu, dùng menu “Gửi đổi mật khẩu” ở danh sách tài khoản.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12.5),
-                ),
-              ],
             ],
           ),
         ),
