@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../firebase_options.dart';
 import '../models/app_user.dart';
 import '../services/auth_service.dart';
 
@@ -129,7 +130,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   }
 
   Future<void> _toggleActive(AppUser user, bool active) async {
-    final currentUid = _authService.currentUser?.uid;
+    final currentUid = (await _authService.currentProfile())?.uid;
     if (user.uid == currentUid && !active) {
       _showSnack('Bạn không thể tự khóa tài khoản admin đang dùng.');
       return;
@@ -149,10 +150,13 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
 
   Future<void> _sendResetPassword(AppUser user) async {
     final confirm = await _confirm(
-      title: 'Gửi đặt lại mật khẩu?',
-      message:
-          'Firebase sẽ gửi email đặt lại mật khẩu đến ${user.email}. Người dùng tự đặt mật khẩu mới qua email này.',
-      actionText: 'Gửi email',
+      title: FirebaseEnv.isConfigured
+          ? 'Gửi đặt lại mật khẩu?'
+          : 'Đặt lại mật khẩu local?',
+      message: FirebaseEnv.isConfigured
+          ? 'Firebase sẽ gửi email đặt lại mật khẩu đến ${user.email}. Người dùng tự đặt mật khẩu mới qua email này.'
+          : 'Mật khẩu local của ${user.email} sẽ được đặt về 123456.',
+      actionText: FirebaseEnv.isConfigured ? 'Gửi email' : 'Đặt về 123456',
       icon: Icons.mark_email_read_outlined,
     );
     if (confirm != true) return;
@@ -160,7 +164,11 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     setState(() => _busyUid = user.uid);
     try {
       await _authService.sendPasswordReset(user.email);
-      _showSnack('Đã gửi email đặt lại mật khẩu.');
+      _showSnack(
+        FirebaseEnv.isConfigured
+            ? 'Đã gửi email đặt lại mật khẩu.'
+            : 'Đã đặt mật khẩu local về 123456.',
+      );
     } catch (e) {
       _showSnack(e);
     } finally {
@@ -169,7 +177,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   }
 
   Future<void> _archiveUser(AppUser user) async {
-    final currentUid = _authService.currentUser?.uid;
+    final currentUid = (await _authService.currentProfile())?.uid;
     if (user.uid == currentUid) {
       _showSnack('Bạn không thể tự lưu trữ tài khoản admin đang dùng.');
       return;

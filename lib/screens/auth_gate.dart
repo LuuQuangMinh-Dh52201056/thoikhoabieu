@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../firebase_options.dart';
 import '../models/app_user.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
@@ -12,6 +13,27 @@ class AuthGate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authService = AuthService();
+
+    if (!FirebaseEnv.isConfigured) {
+      return StreamBuilder<void>(
+        stream: AuthService.localAuthChanges,
+        builder: (context, _) => FutureBuilder<AppUser?>(
+          future: authService.currentProfile(),
+          builder: (context, profileSnapshot) {
+            if (profileSnapshot.connectionState == ConnectionState.waiting) {
+              return const _LoadingScreen();
+            }
+
+            final profile = profileSnapshot.data;
+            if (profile == null) {
+              return const LoginScreen();
+            }
+
+            return WeeklyScheduleScreen(currentUser: profile);
+          },
+        ),
+      );
+    }
 
     return StreamBuilder<User?>(
       stream: authService.authStateChanges,

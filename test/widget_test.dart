@@ -4,9 +4,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:thoi_khoa_bieu/main.dart';
 
 void main() {
-  testWidgets('renders local schedule screen when Firebase is not configured', (
+  testWidgets('signs in with local admin when Firebase is not configured', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(900, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     SharedPreferences.setMockInitialValues({});
 
     await tester.pumpWidget(
@@ -14,8 +19,15 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 100));
 
+    expect(find.text('Tài khoản admin local'), findsOneWidget);
+    expect(find.text('admin@local.com / admin123456'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Đăng nhập'));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(seconds: 1));
+
     expect(find.text('Thời khóa biểu tuần'), findsOneWidget);
-    expect(find.text('Chưa có lịch cho ngày này'), findsOneWidget);
     expect(find.byIcon(Icons.add_rounded), findsOneWidget);
   });
 }
