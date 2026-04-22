@@ -2,7 +2,9 @@
 build/
 .git/
 .idea/
-.vscode/
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
 .flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
