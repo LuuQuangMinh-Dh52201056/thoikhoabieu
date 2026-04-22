@@ -11,7 +11,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _authService = AuthService();
 
@@ -20,7 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -32,7 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
     try {
       await _authService.signIn(
-        email: _emailController.text,
+        username: _usernameController.text,
         password: _passwordController.text,
       );
     } catch (e) {
@@ -45,32 +45,6 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
-    }
-  }
-
-  Future<void> _sendPasswordReset() async {
-    final email = _emailController.text.trim();
-    if (email.isEmpty || !email.contains('@')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Nhập email hợp lệ trước khi đặt lại mật khẩu.'),
-        ),
-      );
-      return;
-    }
-
-    try {
-      await _authService.sendOwnPasswordReset(email);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đã gửi email đặt lại mật khẩu.')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      final message = e is AuthServiceException ? e.message : e.toString();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
@@ -142,20 +116,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: Column(
                           children: [
                             TextFormField(
-                              controller: _emailController,
-                              keyboardType: TextInputType.emailAddress,
+                              controller: _usernameController,
+                              keyboardType: TextInputType.text,
                               textInputAction: TextInputAction.next,
                               decoration: const InputDecoration(
-                                labelText: 'Email',
-                                prefixIcon: Icon(Icons.mail_outline_rounded),
+                                labelText: 'Tên đăng nhập',
+                                prefixIcon: Icon(Icons.account_circle_outlined),
                               ),
                               validator: (value) {
-                                final text = value?.trim() ?? '';
-                                if (text.isEmpty) return 'Nhập email';
-                                if (!text.contains('@')) {
-                                  return 'Email không hợp lệ';
-                                }
-                                return null;
+                                return AuthService.validateUsernameText(value);
                               },
                             ),
                             const SizedBox(height: 12),
@@ -188,16 +157,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                 }
                                 return null;
                               },
-                            ),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton.icon(
-                                onPressed: _sendPasswordReset,
-                                icon: const Icon(
-                                  Icons.mark_email_read_outlined,
-                                ),
-                                label: const Text('Quên mật khẩu'),
-                              ),
                             ),
                             const SizedBox(height: 18),
                             ElevatedButton.icon(

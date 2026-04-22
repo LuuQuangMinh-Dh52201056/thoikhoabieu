@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AppUser {
   final String uid;
+  final String username;
   final String email;
   final String displayName;
   final String role;
@@ -12,6 +13,7 @@ class AppUser {
 
   const AppUser({
     required this.uid,
+    required this.username,
     required this.email,
     required this.displayName,
     required this.role,
@@ -36,12 +38,14 @@ class AppUser {
   String get displayLabel {
     final name = displayName.trim();
     if (name.isNotEmpty) return name;
+    if (username.trim().isNotEmpty) return username;
     return email;
   }
 
   Map<String, dynamic> toMap() {
     return {
       'uid': uid,
+      'username': username,
       'email': email,
       'displayName': displayName,
       'role': role,
@@ -51,9 +55,15 @@ class AppUser {
   }
 
   factory AppUser.fromMap(String uid, Map<String, dynamic> map) {
+    final email = map['email']?.toString() ?? '';
+    final username = map['username']?.toString().trim().isNotEmpty == true
+        ? map['username']!.toString()
+        : _usernameFromEmail(email);
+
     return AppUser(
       uid: uid,
-      email: map['email']?.toString() ?? '',
+      username: username,
+      email: email,
       displayName: map['displayName']?.toString() ?? '',
       role: map['role']?.toString() == 'admin' ? 'admin' : 'user',
       active: map['active'] != false,
@@ -68,5 +78,11 @@ class AppUser {
     if (raw is Timestamp) return raw.toDate();
     if (raw is DateTime) return raw;
     return DateTime.tryParse(raw.toString());
+  }
+
+  static String _usernameFromEmail(String email) {
+    final clean = email.trim();
+    if (clean.isEmpty) return '';
+    return clean.split('@').first;
   }
 }

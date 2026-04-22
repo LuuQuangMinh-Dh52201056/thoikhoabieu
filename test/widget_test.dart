@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:thoi_khoa_bieu/main.dart';
+import 'package:thoi_khoa_bieu/services/auth_service.dart';
 
 void main() {
   testWidgets('signs in with local admin when Firebase is not configured', (
@@ -22,12 +23,12 @@ void main() {
     expect(find.text('Đăng nhập tài khoản nội bộ'), findsOneWidget);
 
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'Email'),
-      'admin@local.com',
+      find.widgetWithText(TextFormField, 'Tên đăng nhập'),
+      AuthService.localAdminUsername,
     );
     await tester.enterText(
       find.widgetWithText(TextFormField, 'Mật khẩu'),
-      'admin123456',
+      AuthService.localAdminPassword,
     );
 
     await tester.tap(find.widgetWithText(ElevatedButton, 'Đăng nhập'));

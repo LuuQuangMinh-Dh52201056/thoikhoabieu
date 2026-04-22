@@ -41,6 +41,8 @@ FIREBASE_MESSAGING_SENDER_ID=...
 FIREBASE_PROJECT_ID=...
 FIREBASE_AUTH_DOMAIN=...
 FIREBASE_STORAGE_BUCKET=...
+LOCAL_ADMIN_USERNAME=...
+LOCAL_ADMIN_PASSWORD=...
 ```
 
 Bốn biến bắt buộc để app bật Firebase là:
@@ -53,6 +55,15 @@ FIREBASE_PROJECT_ID
 ```
 
 `FIREBASE_AUTH_DOMAIN` và `FIREBASE_STORAGE_BUCKET` có thể bỏ trống; app sẽ tự suy ra từ `FIREBASE_PROJECT_ID`.
+
+Nếu chưa cấu hình Firebase, app dùng tài khoản admin local. Để chỉ bạn biết tài khoản này, đặt:
+
+```text
+LOCAL_ADMIN_USERNAME=tenadmin01
+LOCAL_ADMIN_PASSWORD=matkhau-rieng-cua-ban
+```
+
+`LOCAL_ADMIN_USERNAME` phải có cả chữ và số, ví dụ `admin01`, `minh2026`, `quantri9`.
 
 ## 4. Deploy lại sau khi sửa code
 

@@ -15,6 +15,12 @@ class FirebaseEnv {
   static const _storageBucket = String.fromEnvironment(
     'FIREBASE_STORAGE_BUCKET',
   );
+  static const _localAdminUsername = String.fromEnvironment(
+    'LOCAL_ADMIN_USERNAME',
+  );
+  static const _localAdminPassword = String.fromEnvironment(
+    'LOCAL_ADMIN_PASSWORD',
+  );
 
   static Map<String, String> _runtimeValues = const {};
 
@@ -26,6 +32,10 @@ class FirebaseEnv {
   static String get authDomain => _value('FIREBASE_AUTH_DOMAIN', _authDomain);
   static String get storageBucket =>
       _value('FIREBASE_STORAGE_BUCKET', _storageBucket);
+  static String get localAdminUsername =>
+      _value('LOCAL_ADMIN_USERNAME', _localAdminUsername);
+  static String get localAdminPassword =>
+      _value('LOCAL_ADMIN_PASSWORD', _localAdminPassword);
 
   static Future<void> load() async {
     try {

@@ -20,3 +20,7 @@ services:
         sync: false
       - key: FIREBASE_STORAGE_BUCKET
         sync: false
+      - key: LOCAL_ADMIN_USERNAME
+        sync: false
+      - key: LOCAL_ADMIN_PASSWORD
+        sync: false

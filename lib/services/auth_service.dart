@@ -19,8 +19,19 @@ class AuthServiceException implements Exception {
 }
 
 class AuthService {
-  static const localAdminEmail = 'admin@local.com';
-  static const localAdminPassword = 'admin123456';
+  static String get localAdminUsername {
+    final configured = _normalizeUsernameStatic(FirebaseEnv.localAdminUsername);
+    if (validateUsernameText(configured) == null) return configured;
+    return 'admin01';
+  }
+
+  static String get localAdminPassword {
+    final configured = FirebaseEnv.localAdminPassword.trim();
+    if (configured.length >= 6) return configured;
+    return 'admin123456';
+  }
+
+  static const _internalEmailDomain = 'accounts.thoikhoabieu.app';
 
   static const _localUsersKey = 'local_auth_users';
   static const _localCurrentUidKey = 'local_auth_current_uid';
@@ -37,6 +48,27 @@ class AuthService {
       _providedDb = db;
 
   static Stream<void> get localAuthChanges => _localAuthEvents.stream;
+
+  static String? validateUsernameText(String? value) {
+    final username = _normalizeUsernameStatic(value ?? '');
+    if (username.isEmpty) return 'Nhập tên đăng nhập';
+    if (username.length < 3 || username.length > 30) {
+      return 'Tên đăng nhập cần từ 3 đến 30 ký tự';
+    }
+    if (username.contains('@')) return 'Không nhập email ở ô này';
+    if (!RegExp(r'^[a-z0-9._-]+$').hasMatch(username)) {
+      return 'Chỉ dùng chữ, số, dấu chấm, gạch dưới hoặc gạch ngang';
+    }
+    if (!RegExp(r'[a-z]').hasMatch(username) ||
+        !RegExp(r'[0-9]').hasMatch(username)) {
+      return 'Tên đăng nhập phải có cả chữ và số';
+    }
+    return null;
+  }
+
+  static String _normalizeUsernameStatic(String username) {
+    return username.trim().toLowerCase();
+  }
 
   FirebaseAuth get _auth => _providedAuth ?? FirebaseAuth.instance;
 
@@ -91,16 +123,20 @@ class AuthService {
   }
 
   Future<AppUser> signIn({
-    required String email,
+    required String username,
     required String password,
   }) async {
+    final cleanUsername = _normalizeUsername(username);
+    _validateUsername(cleanUsername);
+
     if (!FirebaseEnv.isConfigured) {
-      final cleanEmail = _normalizeEmail(email);
       final users = await _localUserMaps();
-      final user = _findLocalUserByEmail(users, cleanEmail);
+      final user = _findLocalUserByUsername(users, cleanUsername);
 
       if (user == null || user['password']?.toString() != password) {
-        throw const AuthServiceException('Email hoặc mật khẩu không đúng.');
+        throw const AuthServiceException(
+          'Tên đăng nhập hoặc mật khẩu không đúng.',
+        );
       }
 
       final profile = _appUserFromLocalMap(user);
@@ -117,10 +153,8 @@ class AuthService {
     }
 
     try {
-      await _auth.signInWithEmailAndPassword(
-        email: email.trim(),
-        password: password,
-      );
+      final email = await _firebaseEmailForUsername(cleanUsername);
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
 
       final profile = await currentProfile();
       if (profile == null) {
@@ -175,14 +209,16 @@ class AuthService {
   }
 
   Future<AppUser> createUser({
-    required String email,
+    required String username,
     required String password,
     required String displayName,
     required String role,
   }) async {
+    final cleanUsername = _normalizeUsername(username);
+    _validateUsername(cleanUsername);
+
     if (!FirebaseEnv.isConfigured) {
       final admin = await _requireLocalAdmin();
-      final cleanEmail = _normalizeEmail(email);
       final cleanName = displayName.trim();
 
       if (password.length < 6) {
@@ -193,14 +229,15 @@ class AuthService {
       }
 
       final users = await _localUserMaps();
-      if (_findLocalUserByEmail(users, cleanEmail) != null) {
-        throw const AuthServiceException('Email này đã có tài khoản.');
+      if (_findLocalUserByUsername(users, cleanUsername) != null) {
+        throw const AuthServiceException('Tên đăng nhập này đã có tài khoản.');
       }
 
       final now = DateTime.now().toIso8601String();
       final user = <String, dynamic>{
         'uid': 'local-${DateTime.now().microsecondsSinceEpoch}',
-        'email': cleanEmail,
+        'username': cleanUsername,
+        'email': _internalEmailForUsername(cleanUsername),
         'password': password,
         'displayName': cleanName,
         'role': role == 'admin' ? 'admin' : 'user',
@@ -227,11 +264,20 @@ class AuthService {
       options: Firebase.app().options,
     );
     final secondaryAuth = FirebaseAuth.instanceFor(app: secondaryApp);
+    final authEmail = _internalEmailForUsername(cleanUsername);
 
     User? createdUser;
     try {
+      final existingUsername = await _users
+          .where('username', isEqualTo: cleanUsername)
+          .limit(1)
+          .get();
+      if (existingUsername.docs.isNotEmpty) {
+        throw const AuthServiceException('Tên đăng nhập này đã có tài khoản.');
+      }
+
       final credential = await secondaryAuth.createUserWithEmailAndPassword(
-        email: email.trim(),
+        email: authEmail,
         password: password,
       );
       createdUser = credential.user;
@@ -247,7 +293,8 @@ class AuthService {
 
       final appUser = AppUser(
         uid: createdUser.uid,
-        email: createdUser.email ?? email.trim(),
+        username: cleanUsername,
+        email: createdUser.email ?? authEmail,
         displayName: cleanName,
         role: role == 'admin' ? 'admin' : 'user',
         active: true,
@@ -533,19 +580,47 @@ class AuthService {
       }
     }
 
-    if (_findLocalUserByEmail(users, localAdminEmail) == null) {
+    var changed = false;
+    for (var i = 0; i < users.length; i++) {
+      final user = users[i];
+      final username = user['username']?.toString().trim();
+      if (username == null ||
+          username.isEmpty ||
+          user['uid'] == 'local-admin') {
+        final migratedUsername = user['uid'] == 'local-admin'
+            ? localAdminUsername
+            : _normalizeUsername(
+                user['email']?.toString().split('@').first ?? '',
+              );
+        users[i] = {
+          ...user,
+          'username': migratedUsername,
+          if ((user['email']?.toString() ?? '').isEmpty ||
+              user['uid'] == 'local-admin')
+            'email': _internalEmailForUsername(migratedUsername),
+        };
+        changed = true;
+      }
+    }
+
+    if (_findLocalUserByUsername(users, localAdminUsername) == null) {
       final now = DateTime.now().toIso8601String();
       users.insert(0, {
         'uid': 'local-admin',
-        'email': localAdminEmail,
+        'username': localAdminUsername,
+        'email': _internalEmailForUsername(localAdminUsername),
         'password': localAdminPassword,
-        'displayName': 'Admin local',
+        'displayName': 'Admin',
         'role': 'admin',
         'active': true,
         'deleted': false,
         'createdAt': now,
         'updatedAt': now,
       });
+      changed = true;
+    }
+
+    if (changed) {
       await _saveLocalUserMaps(users);
     }
 
@@ -586,13 +661,14 @@ class AuthService {
     return null;
   }
 
-  Map<String, dynamic>? _findLocalUserByEmail(
+  Map<String, dynamic>? _findLocalUserByUsername(
     List<Map<String, dynamic>> users,
-    String email,
+    String username,
   ) {
-    final cleanEmail = _normalizeEmail(email);
+    final cleanUsername = _normalizeUsername(username);
     for (final user in users) {
-      if (_normalizeEmail(user['email']?.toString() ?? '') == cleanEmail) {
+      if (_normalizeUsername(user['username']?.toString() ?? '') ==
+          cleanUsername) {
         return user;
       }
     }
@@ -604,6 +680,36 @@ class AuthService {
   }
 
   String _normalizeEmail(String email) => email.trim().toLowerCase();
+
+  String _normalizeUsername(String username) {
+    return _normalizeUsernameStatic(username);
+  }
+
+  void _validateUsername(String username) {
+    final message = validateUsernameText(username);
+    if (message != null) throw AuthServiceException(message);
+  }
+
+  String _internalEmailForUsername(String username) {
+    final clean = _normalizeUsername(
+      username,
+    ).replaceAll(RegExp(r'[^a-z0-9._-]'), '');
+    return '$clean@$_internalEmailDomain';
+  }
+
+  Future<String> _firebaseEmailForUsername(String username) async {
+    final snapshot = await _users
+        .where('username', isEqualTo: _normalizeUsername(username))
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isEmpty) {
+      return _internalEmailForUsername(username);
+    }
+
+    final email = snapshot.docs.first.data()['email']?.toString() ?? '';
+    return email.trim().isEmpty ? _internalEmailForUsername(username) : email;
+  }
 
   void _sortUsers(List<AppUser> users) {
     users.sort((a, b) {
@@ -618,15 +724,15 @@ class AuthService {
   String _authMessage(FirebaseAuthException e) {
     switch (e.code) {
       case 'invalid-email':
-        return 'Email không hợp lệ.';
+        return 'Tên đăng nhập không hợp lệ.';
       case 'user-disabled':
         return 'Tài khoản này đã bị khóa.';
       case 'user-not-found':
       case 'wrong-password':
       case 'invalid-credential':
-        return 'Email hoặc mật khẩu không đúng.';
+        return 'Tên đăng nhập hoặc mật khẩu không đúng.';
       case 'email-already-in-use':
-        return 'Email này đã có tài khoản.';
+        return 'Tên đăng nhập này đã có tài khoản.';
       case 'weak-password':
         return 'Mật khẩu cần ít nhất 6 ký tự.';
       case 'operation-not-allowed':

@@ -50,7 +50,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
       if (query.isEmpty) return true;
 
       final searchable =
-          '${user.displayLabel} ${user.email} ${user.roleLabel} ${user.statusLabel}'
+          '${user.displayLabel} ${user.username} ${user.roleLabel} ${user.statusLabel}'
               .toLowerCase();
       return searchable.contains(query);
     }).toList();
@@ -239,8 +239,24 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   }
 
   Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF101827), Color(0xFF123C69), Color(0xFF0F766E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF101827).withValues(alpha: 0.22),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
       child: Column(
         children: [
           Row(
@@ -249,8 +265,11 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF111827),
+                  color: Colors.white.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.16),
+                  ),
                 ),
                 child: IconButton(
                   onPressed: () => Navigator.pop(context),
@@ -268,16 +287,16 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                     Text(
                       'Admin users',
                       style: TextStyle(
-                        color: Color(0xFF0F172A),
-                        fontSize: 25,
+                        color: Colors.white,
+                        fontSize: 26,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    SizedBox(height: 4),
                     Text(
-                      'Thêm, sửa, khóa và xóa tài khoản',
+                      'Bảng điều khiển tài khoản nội bộ',
                       style: TextStyle(
-                        color: Color(0xFF64748B),
+                        color: Colors.white70,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -287,7 +306,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
               IconButton(
                 onPressed: _loadUsers,
                 tooltip: 'Tải lại',
-                icon: const Icon(Icons.refresh_rounded),
+                icon: const Icon(Icons.refresh_rounded, color: Colors.white),
               ),
               FilledButton.icon(
                 onPressed: _openCreateUser,
@@ -296,7 +315,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
@@ -345,7 +364,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
           child: TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              labelText: 'Tìm theo tên, email, quyền hoặc trạng thái',
+              labelText: 'Tìm theo tên đăng nhập, tên hiển thị hoặc quyền',
               prefixIcon: const Icon(Icons.search_rounded),
               suffixIcon: _searchController.text.trim().isEmpty
                   ? null
@@ -507,16 +526,9 @@ class _MetricTile extends StatelessWidget {
       height: 72,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
-            blurRadius: 14,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
       ),
       child: Row(
         children: [
@@ -524,10 +536,10 @@ class _MetricTile extends StatelessWidget {
             width: 34,
             height: 34,
             decoration: BoxDecoration(
-              color: const Color(0xFFEFF6FF),
+              color: Colors.white.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: const Color(0xFF2563EB), size: 19),
+            child: Icon(icon, color: Colors.white, size: 19),
           ),
           const SizedBox(width: 9),
           Expanded(
@@ -540,7 +552,7 @@ class _MetricTile extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Color(0xFF0F172A),
+                    color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
                   ),
@@ -550,7 +562,7 @@ class _MetricTile extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Color(0xFF64748B),
+                    color: Colors.white70,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),
@@ -634,7 +646,7 @@ class _UserAccountCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    user.email,
+                    '@${user.username}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -806,7 +818,7 @@ class _UserFormSheet extends StatefulWidget {
 
 class _UserFormSheetState extends State<_UserFormSheet> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _displayNameController = TextEditingController();
 
@@ -820,7 +832,7 @@ class _UserFormSheetState extends State<_UserFormSheet> {
   void initState() {
     super.initState();
     final user = widget.existingUser;
-    _emailController.text = user?.email ?? '';
+    _usernameController.text = user?.username ?? '';
     _displayNameController.text = user?.displayName ?? '';
     _role = user?.role ?? 'user';
     _active = user?.active ?? true;
@@ -828,7 +840,7 @@ class _UserFormSheetState extends State<_UserFormSheet> {
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     _displayNameController.dispose();
     super.dispose();
@@ -843,7 +855,7 @@ class _UserFormSheetState extends State<_UserFormSheet> {
       final user = widget.existingUser;
       if (user == null) {
         await widget.authService.createUser(
-          email: _emailController.text,
+          username: _usernameController.text,
           password: _passwordController.text,
           displayName: _displayNameController.text,
           role: _role,
@@ -912,7 +924,7 @@ class _UserFormSheetState extends State<_UserFormSheet> {
                         Text(
                           _isEdit
                               ? 'Cập nhật tên, quyền và trạng thái truy cập'
-                              : 'Tài khoản sẽ dùng email và mật khẩu để đăng nhập',
+                              : 'Tạo username có chữ và số, kèm mật khẩu riêng',
                           style: TextStyle(
                             color: Colors.grey.shade700,
                             fontWeight: FontWeight.w600,
@@ -940,21 +952,18 @@ class _UserFormSheetState extends State<_UserFormSheet> {
               ),
               const SizedBox(height: 12),
               TextFormField(
-                controller: _emailController,
+                controller: _usernameController,
                 enabled: !_isEdit,
-                keyboardType: TextInputType.emailAddress,
+                keyboardType: TextInputType.text,
                 textInputAction: _isEdit
                     ? TextInputAction.done
                     : TextInputAction.next,
                 decoration: const InputDecoration(
-                  labelText: 'Email đăng nhập',
-                  prefixIcon: Icon(Icons.mail_outline_rounded),
+                  labelText: 'Tên đăng nhập',
+                  prefixIcon: Icon(Icons.account_circle_outlined),
                 ),
                 validator: (value) {
-                  final text = value?.trim() ?? '';
-                  if (text.isEmpty) return 'Nhập email';
-                  if (!text.contains('@')) return 'Email không hợp lệ';
-                  return null;
+                  return AuthService.validateUsernameText(value);
                 },
               ),
               if (!_isEdit) ...[
