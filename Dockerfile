@@ -1,14 +1,17 @@
 FROM debian:stable-slim AS build
 
 RUN apt-get update && apt-get install -y \
-    curl git unzip xz-utils zip libglu1-mesa ca-certificates nginx \
+    curl unzip xz-utils zip git ca-certificates libglu1-mesa \
     && rm -rf /var/lib/apt/lists/*
 
-RUN git clone https://github.com/flutter/flutter.git /flutter
-ENV PATH="/flutter/bin:/flutter/bin/cache/dart-sdk/bin:${PATH}"
+WORKDIR /opt
+RUN curl -L https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.35.7-stable.tar.xz \
+    | tar -xJ
 
-RUN flutter channel stable
+ENV PATH="/opt/flutter/bin:/opt/flutter/bin/cache/dart-sdk/bin:${PATH}"
+
 RUN flutter config --enable-web
+RUN flutter doctor -v
 
 WORKDIR /app
 COPY . .
