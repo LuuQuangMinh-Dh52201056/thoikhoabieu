@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 
+import '../firebase_options.dart';
 import '../models/app_user.dart';
 
 class AuthServiceException implements Exception {
@@ -14,21 +15,32 @@ class AuthServiceException implements Exception {
 }
 
 class AuthService {
-  final FirebaseAuth _auth;
-  final FirebaseFirestore _db;
+  final FirebaseAuth? _providedAuth;
+  final FirebaseFirestore? _providedDb;
 
   AuthService({FirebaseAuth? auth, FirebaseFirestore? db})
-    : _auth = auth ?? FirebaseAuth.instance,
-      _db = db ?? FirebaseFirestore.instance;
+    : _providedAuth = auth,
+      _providedDb = db;
 
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
+  FirebaseAuth get _auth => _providedAuth ?? FirebaseAuth.instance;
 
-  User? get currentUser => _auth.currentUser;
+  FirebaseFirestore get _db => _providedDb ?? FirebaseFirestore.instance;
+
+  Stream<User?> get authStateChanges {
+    if (!FirebaseEnv.isConfigured) return const Stream<User?>.empty();
+    return _auth.authStateChanges();
+  }
+
+  User? get currentUser {
+    if (!FirebaseEnv.isConfigured) return null;
+    return _auth.currentUser;
+  }
 
   CollectionReference<Map<String, dynamic>> get _users =>
       _db.collection('users');
 
   Future<AppUser?> currentProfile() async {
+    if (!FirebaseEnv.isConfigured) return null;
     final user = _auth.currentUser;
     if (user == null) return null;
 
@@ -66,7 +78,10 @@ class AuthService {
     }
   }
 
-  Future<void> signOut() => _auth.signOut();
+  Future<void> signOut() {
+    if (!FirebaseEnv.isConfigured) return Future.value();
+    return _auth.signOut();
+  }
 
   Future<List<AppUser>> getUsers() async {
     final profile = await currentProfile();

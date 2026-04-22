@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'firebase_options.dart';
+import 'models/app_user.dart';
 import 'screens/auth_gate.dart';
-import 'screens/firebase_setup_screen.dart';
+import 'screens/weekly_schedule_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +23,14 @@ class DrivingScheduleApp extends StatelessWidget {
   final bool firebaseConfigured;
 
   const DrivingScheduleApp({super.key, this.firebaseConfigured = false});
+
+  static const _localUser = AppUser(
+    uid: 'local-demo-user',
+    email: 'local@thoikhoabieu.app',
+    displayName: 'Chế độ local',
+    role: 'user',
+    active: true,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -118,7 +127,9 @@ class DrivingScheduleApp extends StatelessWidget {
           ),
         ),
       ),
-      home: firebaseConfigured ? const AuthGate() : const FirebaseSetupScreen(),
+      home: firebaseConfigured
+          ? const AuthGate()
+          : const WeeklyScheduleScreen(currentUser: _localUser),
     );
   }
 }
